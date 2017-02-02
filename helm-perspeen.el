@@ -3,20 +3,21 @@
 ;; Copyright (C) 2017 jimo1001 <jimo1001@gmail.com>
 ;;
 ;; Author: Yoshinobu Fujimoto
+;; Version: 0.1.0
 ;; URL: https://github.com/jimo1001/helm-perspeen
 ;; Created: 2017-01-30
-;; Version: 0.1.0
-;; Keywords: projects, lisp
 ;; Package-Requires: ((perspeen "0.1.0") (helm-projectile "2.5.1"))
+;; Keywords: projects, lisp
 
-;;  URLs
-;;  - perspeen
-;;     - https://github.com/seudut/perspeen/blob/master/perspeen
-;;  - helm:
-;;    - https://emacs-helm.github.io/helm/
-;;  - helm-projectile
-;;    - https://github.com/bbatsov/helm-projectile
+;; Dependencies:
+;; - perspeen
+;;    - https://github.com/seudut/perspeen/blob/master/perspeen
+;; - helm:
+;;   - https://emacs-helm.github.io/helm/
+;; - (Optional) helm-projectile
+;;   - https://github.com/bbatsov/helm-projectile
 ;;
+
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
 ;; the Free Software Foundation, either version 3 of the License, or
@@ -32,7 +33,6 @@
 
 ;;; Commentary:
 
-;; This package provides helm interface for perspeen's workspaces.
 ;;
 ;; Command:
 ;;   - M-x helm-perspeen
@@ -48,7 +48,6 @@
 
 (require 'helm)
 (require 'perspeen)
-(require 'helm-projectile)
 
 
 (defvar helm-source-perspeen-tabs
@@ -67,6 +66,14 @@
     (lambda (index) (perspeen-tab-switch-internal index) nil))
   "The helm source which are perspeen's tabs in the current workspace.")
 
+(defun helm-perspeen--switch-workspace (ws)
+  "Switch to another workspace.
+Save the old windows configuration and restore the new configuration.
+Argument WS the workspace to swith to."
+  (perspeen-switch-ws-internal ws)
+  (perspeen-update-mode-string)
+  nil)
+
 (defvar helm-source-perspeen-workspaces
   (helm-build-sync-source "WorkSpaces (perspeen)"
     :candidates
@@ -77,7 +84,7 @@
                   (cons (format "%s (%s)" name root-dir) ws)))
               perspeen-ws-list))
     :action
-    'perspeen-switch-ws-internal)
+    'helm-perspeen--switch-workspace)
   "The workspaces helm source for perspeen.el.")
 
 (defun helm-perspeen-create-projectile-workspace (dir)
@@ -97,11 +104,11 @@ DIR is project root directory."
                (perspeen-rename-ws candidate) nil))))
 
 ;;;###autoload
-(eval-after-load 'helm-projectile
-  #'(lambda ()
-      (setq helm-source-projectile-projects-actions
-            (append helm-source-projectile-projects-actions
-                    '(("Create WorkSpace (perspeen)" . helm-perspeen-create-projectile-workspace))))))
+(when (require 'helm-projectile nil t)
+  (with-eval-after-load 'helm-projectile
+    (setq helm-source-projectile-projects-actions
+          (append helm-source-projectile-projects-actions
+                  '(("Create WorkSpace (perspeen)" . helm-perspeen-create-projectile-workspace))))))
 
 ;;;###autoload
 (defun helm-perspeen ()
