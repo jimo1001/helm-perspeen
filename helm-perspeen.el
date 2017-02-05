@@ -106,9 +106,11 @@ DIR is project root directory."
 ;;;###autoload
 (when (require 'helm-projectile nil t)
   (with-eval-after-load 'helm-projectile
-    (setq helm-source-projectile-projects-actions
-          (append helm-source-projectile-projects-actions
-                  '(("Create WorkSpace (perspeen)" . helm-perspeen-create-projectile-workspace))))))
+    (let ((acts helm-source-projectile-projects-actions)
+          (act '("Create WorkSpace (perspeen)" . helm-perspeen-create-projectile-workspace)))
+      (if (not (member act acts))
+          (setq helm-source-projectile-projects-actions
+                (append acts (list act)))))))
 
 ;;;###autoload
 (defun helm-perspeen ()
