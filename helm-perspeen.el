@@ -6,7 +6,7 @@
 ;; Version: 0.1.0
 ;; URL: https://github.com/jimo1001/helm-perspeen
 ;; Created: 2017-01-30
-;; Package-Requires: ((perspeen "0.1.0"))
+;; Package-Requires: ((perspeen "0.1.0") (helm "2.5.0"))
 ;; Keywords: projects, lisp
 
 ;; Dependencies:
