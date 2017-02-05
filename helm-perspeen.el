@@ -6,7 +6,7 @@
 ;; Version: 0.1.0
 ;; URL: https://github.com/jimo1001/helm-perspeen
 ;; Created: 2017-01-30
-;; Package-Requires: ((perspeen "0.1.0") (helm-projectile "2.5.1"))
+;; Package-Requires: ((perspeen "0.1.0"))
 ;; Keywords: projects, lisp
 
 ;; Dependencies:
@@ -104,13 +104,10 @@ DIR is project root directory."
                (perspeen-rename-ws candidate) nil))))
 
 ;;;###autoload
-(when (require 'helm-projectile nil t)
-  (with-eval-after-load 'helm-projectile
-    (let ((acts helm-source-projectile-projects-actions)
-          (act '("Create WorkSpace (perspeen)" . helm-perspeen-create-projectile-workspace)))
-      (if (not (member act acts))
-          (setq helm-source-projectile-projects-actions
-                (append acts (list act)))))))
+(with-eval-after-load 'helm-projectile
+  (when (boundp 'helm-source-projectile-projects-actions)
+    (add-to-list 'helm-source-projectile-projects-actions
+                 '("Create WorkSpace (perspeen)" . helm-perspeen-create-projectile-workspace) t)))
 
 ;;;###autoload
 (defun helm-perspeen ()
