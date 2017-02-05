@@ -104,10 +104,11 @@ DIR is project root directory."
                (perspeen-rename-ws candidate) nil))))
 
 ;;;###autoload
-(with-eval-after-load 'helm-projectile
-  (when (boundp 'helm-source-projectile-projects-actions)
-    (add-to-list 'helm-source-projectile-projects-actions
-                 '("Create WorkSpace (perspeen)" . helm-perspeen-create-projectile-workspace) t)))
+(eval-after-load 'helm-projectile
+  '(progn
+     (when (boundp 'helm-source-projectile-projects-actions)
+       (add-to-list 'helm-source-projectile-projects-actions
+                    '("Create WorkSpace (perspeen)" . helm-perspeen-create-projectile-workspace) t))))
 
 ;;;###autoload
 (defun helm-perspeen ()
