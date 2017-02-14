@@ -9,15 +9,6 @@
 ;; Package-Requires: ((perspeen "0.1.0") (helm "2.5.0"))
 ;; Keywords: projects, lisp
 
-;; Dependencies:
-;; - perspeen
-;;    - https://github.com/seudut/perspeen/blob/master/perspeen
-;; - helm:
-;;   - https://emacs-helm.github.io/helm/
-;; - (Optional) helm-projectile
-;;   - https://github.com/bbatsov/helm-projectile
-;;
-
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
 ;; the Free Software Foundation, either version 3 of the License, or
@@ -34,8 +25,24 @@
 ;;; Commentary:
 
 ;;
-;; Command:
+;; Configurations:
+;;   Basic:
+;;     (require 'helm-perspeen)
+;;
+;;   Use `use-package.el':
+;;     (use-package helm-perspeen :ensure t)
+;;
+;; Dependencies:
+;;   - perspeen
+;;      - https://github.com/seudut/perspeen/blob/master/perspeen
+;;   - helm
+;;     - https://emacs-helm.github.io/helm/
+;;   - (Optional) helm-projectile
+;;     - https://github.com/bbatsov/helm-projectile
+;;
+;; Commands:
 ;;   - M-x helm-perspeen
+;;
 ;; Helm Sources:
 ;;   - helm-source-perspeen-tabs
 ;;   - helm-source-perspeen-workspaces
@@ -49,6 +56,32 @@
 (require 'helm)
 (require 'perspeen)
 
+(defun helm-perspeen--switch-to-tab (index)
+  "Select the tab of specified INDEX."
+  (perspeen-tab-switch-internal index) nil)
+
+(defun helm-perspeen--kill-tab (index)
+  "Kill a tab of INDEX."
+  (interactive)
+  (let ((tabs (perspeen-tab-get-tabs))
+        (current-index (perspeen-tab-get-current-tab-index)))
+    (delq (nth index tabs) tabs)
+    (perspeen-tab-switch-internal
+     (cond ((> index current-index) current-index)
+           ((> current-index 0) (- current-index 1))
+           (t 0)))))
+
+(defun helm-perspeen--open-buffer-tab (buffer)
+  "Open a BUFFER with new tab."
+  (perspeen-tab-new-tab-internal buffer) nil)
+
+(defcustom helm-source-perspeen-tabs-actions
+  (helm-make-actions
+   "Switch to Tab" #'helm-perspeen--switch-to-tab
+   "Kill Tab" #'helm-perspeen--kill-tab)
+  "Actions for `helm-source-perspeen-tabs'."
+  :group 'helm-perspeen
+  :type '(alist :key-type string :value-type function))
 
 (defvar helm-source-perspeen-tabs
   (helm-build-sync-source "Tabs (perspeen)"
@@ -63,16 +96,44 @@
                     (perspeen-tab-get-tabs)))
         nil))
     :action
-    (lambda (index) (perspeen-tab-switch-internal index) nil))
+    'helm-source-perspeen-tabs-actions)
   "The helm source which are perspeen's tabs in the current workspace.")
 
-(defun helm-perspeen--switch-workspace (ws)
-  "Switch to another workspace.
+(defun helm-perspeen--switch-to-workspace (ws)
+  "Switch to the WS.
 Save the old windows configuration and restore the new configuration.
 Argument WS the workspace to swith to."
   (perspeen-switch-ws-internal ws)
   (perspeen-update-mode-string)
   nil)
+
+(defun helm-perspeen--kill-workspace (ws)
+  "Kill the WS."
+  (interactive)
+  (helm-perspeen--switch-to-workspace ws)
+  (perspeen-delete-ws))
+
+(defun helm-perspeen--rename-workspace (ws)
+  "Rename the WS."
+  (let ((new-name (read-string "Enter the new name: ")))
+    (helm-perspeen--switch-to-workspace ws)
+    (perspeen-rename-ws new-name)))
+
+(defun helm-perspeen--run-eshell (ws)
+  "Invoke `eshell' in the WS's root."
+  (interactive)
+  (helm-perspeen--switch-to-workspace ws)
+  (perspeen-ws-eshell))
+
+(defcustom helm-source-perspeen-workspaces-actions
+  (helm-make-actions
+   "Switch to Workspace" #'helm-perspeen--switch-to-workspace
+   "Rename Workspace" #'helm-perspeen--rename-workspace
+   "Invoke `eshell'" #'helm-perspeen--run-eshell
+   "Kill Workspace" #'helm-perspeen--kill-workspace)
+  "Actions for `helm-source-perspeen-workspaces'."
+  :group 'helm-perspeen
+  :type '(alist :key-type string :value-type function))
 
 (defvar helm-source-perspeen-workspaces
   (helm-build-sync-source "WorkSpaces (perspeen)"
@@ -84,8 +145,8 @@ Argument WS the workspace to swith to."
                   (cons (format "%s (%s)" name root-dir) ws)))
               perspeen-ws-list))
     :action
-    'helm-perspeen--switch-workspace)
-  "The workspaces helm source for perspeen.el.")
+    'helm-source-perspeen-workspaces-actions)
+  "The workspaces helm source for perspeen.")
 
 (defun helm-perspeen-create-projectile-workspace (dir)
   "Create new workspace with project directory.
@@ -112,7 +173,7 @@ DIR is project root directory."
 
 ;;;###autoload
 (defun helm-perspeen ()
-  "Display workspaces (perspeen.el) with helm interface."
+  "Display workspaces (perspeen) with helm interface."
   (interactive
    (helm '(helm-source-perspeen-tabs helm-source-perspeen-workspaces helm-source-perspeen-create-workspace))))
 
