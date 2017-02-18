@@ -1,9 +1,9 @@
-;;; helm-perspeen.el --- helm extension for perspeen.el
+;;; helm-perspeen.el --- Helm interface for perspeen.
 
 ;; Copyright (C) 2017 jimo1001 <jimo1001@gmail.com>
 ;;
 ;; Author: Yoshinobu Fujimoto
-;; Version: 0.1.0
+;; Version: 0.1.1
 ;; URL: https://github.com/jimo1001/helm-perspeen
 ;; Created: 2017-01-30
 ;; Package-Requires: ((perspeen "0.1.0") (helm "2.5.0"))
@@ -56,6 +56,12 @@
 (require 'helm)
 (require 'perspeen)
 
+(defgroup helm-perspeen nil
+  "Helm support for perspeen."
+  :prefix "helm-perspeen-"
+  :group 'perspeen
+  :link `(url-link :tag "GitHub" "https://github.com/jimo1001/helm-perspeen"))
+
 (defun helm-perspeen--switch-to-tab (index)
   "Select the tab of specified INDEX."
   (perspeen-tab-switch-internal index) nil)
@@ -75,28 +81,43 @@
   "Open a BUFFER with new tab."
   (perspeen-tab-new-tab-internal buffer) nil)
 
+(defun helm-perspeen--open-buffer-other-window (buffer)
+  "Open a BUFFER with new tab."
+  (perspeen-tab-new-tab-internal buffer) nil)
+
 (defcustom helm-source-perspeen-tabs-actions
   (helm-make-actions
    "Switch to Tab" #'helm-perspeen--switch-to-tab
-   "Kill Tab" #'helm-perspeen--kill-tab)
+   "Kill Tab `M-D'" #'helm-perspeen--kill-tab)
   "Actions for `helm-source-perspeen-tabs'."
   :group 'helm-perspeen
   :type '(alist :key-type string :value-type function))
+
+(defvar helm-perspeen-tabs-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map helm-map)
+    (define-key map (kbd "M-D") 'helm-perspeen--kill-tab)
+    map)
+  "Keymap for `helm-perspeen'.")
 
 (defvar helm-source-perspeen-tabs
   (helm-build-sync-source "Tabs (perspeen)"
     :candidates
     (lambda ()
       (if perspeen-tab-configurations
-          (let ((index -1) (buffer nil))
+          (let ((index -1) (buffer nil) (current-dir default-directory))
             (mapcar (lambda (tab)
-                      (setq index (+ index 1))
-                      (setq buffer (get tab 'current-buffer))
-                      (cons (format "%s" (buffer-name buffer)) index))
+                      (let ((buffer (get tab 'current-buffer)))
+                        (setq index (+ index 1))
+                        (cons (format "%s (in %s)"
+                                      (buffer-name buffer)
+                                      (file-name-directory
+                                       (or (buffer-file-name buffer)
+                                           default-directory))) index)))
                     (perspeen-tab-get-tabs)))
         nil))
-    :action
-    'helm-source-perspeen-tabs-actions)
+    :action 'helm-source-perspeen-tabs-actions
+    :keymap 'helm-perspeen-tabs-map)
   "The helm source which are perspeen's tabs in the current workspace.")
 
 (defun helm-perspeen--switch-to-workspace (ws)
@@ -128,12 +149,20 @@ Argument WS the workspace to swith to."
 (defcustom helm-source-perspeen-workspaces-actions
   (helm-make-actions
    "Switch to Workspace" #'helm-perspeen--switch-to-workspace
-   "Rename Workspace" #'helm-perspeen--rename-workspace
+   "Rename Workspace `M-R'" #'helm-perspeen--rename-workspace
    "Invoke `eshell'" #'helm-perspeen--run-eshell
-   "Kill Workspace" #'helm-perspeen--kill-workspace)
+   "Kill Workspace `M-D'" #'helm-perspeen--kill-workspace)
   "Actions for `helm-source-perspeen-workspaces'."
   :group 'helm-perspeen
   :type '(alist :key-type string :value-type function))
+
+(defvar helm-perspeen-workspaces-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map helm-map)
+    (define-key map (kbd "M-D") 'helm-perspeen--kill-workspace)
+    (define-key map (kbd "M-R") 'helm-perspeen--rename-workspace)
+    map)
+  "Keymap for `helm-perspeen'.")
 
 (defvar helm-source-perspeen-workspaces
   (helm-build-sync-source "WorkSpaces (perspeen)"
@@ -144,16 +173,9 @@ Argument WS the workspace to swith to."
                       (root-dir (perspeen-ws-struct-root-dir ws)))
                   (cons (format "%s (%s)" name root-dir) ws)))
               perspeen-ws-list))
-    :action
-    'helm-source-perspeen-workspaces-actions)
+    :action 'helm-source-perspeen-workspaces-actions
+    :keymap 'helm-perspeen-workspaces-map)
   "The workspaces helm source for perspeen.")
-
-(defun helm-perspeen-create-projectile-workspace (dir)
-  "Create new workspace with project directory.
-DIR is project root directory."
-  (interactive)
-  (perspeen-create-ws)
-  (perspeen-change-root-dir dir))
 
 (defvar helm-source-perspeen-create-workspace
   (helm-build-dummy-source
@@ -164,12 +186,21 @@ DIR is project root directory."
                (perspeen-create-ws)
                (perspeen-rename-ws candidate) nil))))
 
+(defun helm-perspeen--create-workspace (dir)
+  "Create new workspace with project directory.
+DIR is project root directory."
+  (perspeen-create-ws)
+  (perspeen-change-root-dir dir))
+
 ;;;###autoload
 (eval-after-load 'helm-projectile
   '(progn
-     (when (boundp 'helm-source-projectile-projects-actions)
-       (add-to-list 'helm-source-projectile-projects-actions
-                    '("Create WorkSpace (perspeen)" . helm-perspeen-create-projectile-workspace) t))))
+     (define-key helm-projectile-projects-map (kbd "C-c w")
+       #'(lambda ()
+           (interactive)
+           (helm-exit-and-execute-action 'helm-perspeen--create-workspace)))
+     (add-to-list 'helm-source-projectile-projects-actions
+                  '("Create perspeen's WorkSpace `C-c w'" . helm-perspeen--create-workspace) t)))
 
 ;;;###autoload
 (defun helm-perspeen ()
