@@ -102,7 +102,9 @@
 (defvar helm-perspeen-tabs-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map helm-map)
-    (define-key map (kbd "M-D") 'helm-perspeen--kill-tab)
+    (define-key map (kbd "M-D") #'(lambda ()
+                                    (interactive)
+                                    (helm-exit-and-execute-action 'helm-perspeen--kill-tab)))
     map)
   "Keymap for `helm-perspeen'.")
 
@@ -167,8 +169,12 @@ Argument WS the workspace to swith to."
 (defvar helm-perspeen-workspaces-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map helm-map)
-    (define-key map (kbd "M-D") 'helm-perspeen--kill-workspace)
-    (define-key map (kbd "M-R") 'helm-perspeen--rename-workspace)
+    (define-key map (kbd "M-D") #'(lambda ()
+                                    (interactive)
+                                    (helm-exit-and-execute-action 'helm-perspeen--kill-workspace)))
+    (define-key map (kbd "M-R") #'(lambda ()
+                                    (interactive)
+                                    (helm-exit-and-execute-action 'helm-perspeen--rename-workspace)))
     map)
   "Keymap for `helm-perspeen'.")
 
