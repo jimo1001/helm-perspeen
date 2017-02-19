@@ -3,7 +3,7 @@
 ;; Copyright (C) 2017 jimo1001 <jimo1001@gmail.com>
 ;;
 ;; Author: Yoshinobu Fujimoto
-;; Version: 0.1.1
+;; Version: 0.1.2
 ;; URL: https://github.com/jimo1001/helm-perspeen
 ;; Created: 2017-01-30
 ;; Package-Requires: ((perspeen "0.1.0") (helm "2.5.0"))
@@ -62,6 +62,12 @@
   :group 'perspeen
   :link `(url-link :tag "GitHub" "https://github.com/jimo1001/helm-perspeen"))
 
+(defface helm-perspeen-directory
+    '((t (:foreground "DarkGray")))
+  "Face used for directories in `helm-source-perspeen-tabs' and `helm-source-perspeen-workspaces'."
+  :group 'helm-perspeen)
+
+
 (defun helm-perspeen--switch-to-tab (index)
   "Select the tab of specified INDEX."
   (perspeen-tab-switch-internal index) nil)
@@ -105,15 +111,17 @@
     :candidates
     (lambda ()
       (if perspeen-tab-configurations
-          (let ((index -1) (buffer nil) (current-dir default-directory))
+          (let ((index -1))
             (mapcar (lambda (tab)
-                      (let ((buffer (get tab 'current-buffer)))
+                      (let ((buffer (get tab 'current-buffer)) (current-dir))
                         (setq index (+ index 1))
-                        (cons (format "%s (in %s)"
+                        (setq current-dir (or (file-name-directory (or (buffer-file-name buffer) ""))
+                                              default-directory))
+                        (cons (format "%s\t%s"
                                       (buffer-name buffer)
-                                      (file-name-directory
-                                       (or (buffer-file-name buffer)
-                                           default-directory))) index)))
+                                      (propertize
+                                       (format "(in `%s')" current-dir) 'face 'helm-perspeen-directory))
+                              index)))
                     (perspeen-tab-get-tabs)))
         nil))
     :action 'helm-source-perspeen-tabs-actions
@@ -171,7 +179,9 @@ Argument WS the workspace to swith to."
       (mapcar (lambda (ws)
                 (let ((name (perspeen-ws-struct-name ws))
                       (root-dir (perspeen-ws-struct-root-dir ws)))
-                  (cons (format "%s (%s)" name root-dir) ws)))
+                  (cons (format "%s\t%s" name
+                                (propertize (format "(in `%s')" root-dir) 'face 'helm-perspeen-directory))
+                        ws)))
               perspeen-ws-list))
     :action 'helm-source-perspeen-workspaces-actions
     :keymap 'helm-perspeen-workspaces-map)

@@ -1,4 +1,5 @@
 [![MELPA](https://melpa.org/packages/helm-perspeen-badge.svg)](https://melpa.org/#/helm-perspeen)
+[![MELPA Stable](https://stable.melpa.org/packages/helm-perspeen-badge.svg)](https://stable.melpa.org/#/helm-perspeen)
 
 # helm-perspeen
 This package provides **simple manageability** of using [perspeen](https://github.com/seudut/perspeen) workspaces with [helm](https://github.com/emacs-helm/helm) interface.
@@ -15,8 +16,8 @@ Please, follow the installation instructions from [MELPA](https://melpa.org/) ma
 
 ## Helm Sources
 - `helm-source-perspeen-tabs`: List tags in the current workspace.
-- `helm-source-perspeen-workspaces`: List All workspaces.
-- `helm-source-perspeen-create-workspace`: Create new workspace
+- `helm-source-perspeen-workspaces`: List all workspaces.
+- `helm-source-perspeen-create-workspace`: Create a new workspace.
 
 ## Configuration
 Using [use-package](https://github.com/jwiegley/use-package):
