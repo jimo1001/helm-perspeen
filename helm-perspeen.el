@@ -83,13 +83,13 @@
            ((> current-index 0) (- current-index 1))
            (t 0)))))
 
-(defun helm-perspeen--open-buffer-tab (buffer)
+(defun helm-perspeen--switch-to-buffer-tab (buffer)
   "Open a BUFFER with new tab."
-  (perspeen-tab-new-tab-internal buffer) nil)
+  (perspeen-tab-create-tab buffer 0 t) nil)
 
-(defun helm-perspeen--open-buffer-other-window (buffer)
-  "Open a BUFFER with new tab."
-  (perspeen-tab-new-tab-internal buffer) nil)
+(defun helm-perspeen--open-file-tab (filename)
+  "Open a FILENAME with new tab."
+  (helm-perspeen--open-buffer-tab (find-file-noselect filename)) nil)
 
 (defcustom helm-source-perspeen-tabs-actions
   (helm-make-actions
@@ -102,9 +102,10 @@
 (defvar helm-perspeen-tabs-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map helm-map)
-    (define-key map (kbd "M-D") #'(lambda ()
-                                    (interactive)
-                                    (helm-exit-and-execute-action 'helm-perspeen--kill-tab)))
+    (define-key map (kbd "M-D")
+      #'(lambda ()
+          (interactive)
+          (helm-exit-and-execute-action 'helm-perspeen--kill-tab)))
     map)
   "Keymap for `helm-perspeen'.")
 
@@ -207,6 +208,24 @@ Argument WS the workspace to swith to."
 DIR is project root directory."
   (perspeen-create-ws)
   (perspeen-change-root-dir dir))
+
+;;;###autoload
+(eval-after-load 'helm-files
+  '(progn
+     (define-key helm-find-files-map (kbd "C-c t")
+       #'(lambda ()
+           (interactive)
+           (helm-exit-and-execute-action 'helm-perspeen--open-file-tab)))
+     (define-key helm-buffer-map (kbd "C-c t")
+       #'(lambda ()
+           (interactive)
+           (helm-exit-and-execute-action 'helm-perspeen--switch-to-buffer-tab)))
+     (add-to-list 'helm-type-buffer-actions
+                  '("Open buffer with new perspeen's tab" . helm-perspeen--switch-to-buffer-tab) t)
+     (add-to-list 'helm-find-files-actions
+                  '("Open file with new perspeen's tab" . helm-perspeen--open-file-tab) t)
+     (add-to-list 'helm-type-file-actions
+                  '("Open file with new perspeen's tab" . helm-perspeen--open-file-tab) t)))
 
 ;;;###autoload
 (eval-after-load 'helm-projectile
