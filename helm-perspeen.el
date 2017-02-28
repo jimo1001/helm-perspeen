@@ -89,7 +89,7 @@
 
 (defun helm-perspeen--open-file-tab (filename)
   "Open a FILENAME with new tab."
-  (helm-perspeen--open-buffer-tab (find-file-noselect filename)) nil)
+  (helm-perspeen--switch-to-buffer-tab (find-file-noselect filename)) nil)
 
 (defcustom helm-source-perspeen-tabs-actions
   (helm-make-actions
@@ -210,20 +210,23 @@ DIR is project root directory."
   (perspeen-change-root-dir dir))
 
 ;;;###autoload
-(eval-after-load 'helm-files
+(eval-after-load 'helm-buffers
   '(progn
-     (define-key helm-find-files-map (kbd "C-c t")
-       #'(lambda ()
-           (interactive)
-           (helm-exit-and-execute-action 'helm-perspeen--open-file-tab)))
      (define-key helm-buffer-map (kbd "C-c t")
        #'(lambda ()
            (interactive)
            (helm-exit-and-execute-action 'helm-perspeen--switch-to-buffer-tab)))
      (add-to-list 'helm-type-buffer-actions
-                  '("Open buffer with new perspeen's tab" . helm-perspeen--switch-to-buffer-tab) t)
+                  '("Open buffer with new perspeen's tab" . helm-perspeen--switch-to-buffer-tab) t)))
+
+(eval-after-load 'helm-files
+  '(progn
+     (define-key helm-find-files-map (kbd "C-c t")
+      #'(lambda ()
+          (interactive)
+          (helm-exit-and-execute-action 'helm-perspeen--open-file-tab)))
      (add-to-list 'helm-find-files-actions
-                  '("Open file with new perspeen's tab" . helm-perspeen--open-file-tab) t)
+                 '("Open file with new perspeen's tab" . helm-perspeen--open-file-tab) t)
      (add-to-list 'helm-type-file-actions
                   '("Open file with new perspeen's tab" . helm-perspeen--open-file-tab) t)))
 
